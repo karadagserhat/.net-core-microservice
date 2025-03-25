@@ -13,7 +13,7 @@ async function get(url: string) {
   return handleResponse(response);
 }
 
-async function post(url: string, body: {}) {
+async function post(url: string, body: object) {
   const requestOptions = {
     method: 'POST',
     headers: await getHeaders(),
@@ -25,7 +25,7 @@ async function post(url: string, body: {}) {
   return handleResponse(response);
 }
 
-async function put(url: string, body: {}) {
+async function put(url: string, body: object) {
   const requestOptions = {
     method: 'PUT',
     headers: await getHeaders(),
@@ -48,11 +48,11 @@ async function del(url: string) {
   return handleResponse(response);
 }
 
-async function getHeaders() {
+async function getHeaders(): Promise<Record<string, string>> {
   const session = await auth();
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-type': 'application/json',
-  } as any;
+  };
   if (session?.accessToken) {
     headers.Authorization = 'Bearer ' + session.accessToken;
   }
@@ -61,16 +61,20 @@ async function getHeaders() {
 
 async function handleResponse(response: Response) {
   const text = await response.text();
-  const data = text && JSON.parse(text);
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    data = text;
+  }
 
   if (response.ok) {
     return data || response.statusText;
   } else {
     const error = {
       status: response.status,
-      message: response.statusText,
+      message: typeof (data === 'string') ? data : response.statusText,
     };
-
     return { error };
   }
 }
